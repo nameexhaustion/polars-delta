@@ -1,0 +1,25 @@
+# Python and native extension build products.
+*.so
+*.pyd
+*.pdb
+*.egg-info/
+__pycache__/
+.venv*/
+.pytest_cache/
+.ruff_cache/
+dist/
+
+# Rust workspace build products and local configuration.
+target/
+.cargo/config.generated.toml
+.cargo/config.local.toml
+
+# Local agent and editor state.
+.ai/
+.claude/
+.codex/
+AGENTS.md
+CLAUDE.md
+.idea/
+.vscode/
+.DS_Store
