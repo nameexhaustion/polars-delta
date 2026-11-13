@@ -16,6 +16,7 @@ name = "polars_delta"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+polars-delta-codec = { workspace = true }
 chrono = { workspace = true }
 futures = { workspace = true }
 polars-arrow = { workspace = true }

@@ -372,25 +372,7 @@ impl<T> TransposeOption<T> for Option<Option<T>> {
     }
 }
 fn z85(s: &str) -> Result<Vec<u8>> {
-    const ALPHABET: &[u8] =
-        b"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#";
-    if !s.len().is_multiple_of(5) {
-        return Err(invalid("invalid Z85 length"));
-    }
-    let mut out = Vec::with_capacity(s.len() / 5 * 4);
-    for chunk in s.as_bytes().chunks_exact(5) {
-        let mut n = 0u64;
-        for b in chunk {
-            let digit = ALPHABET
-                .iter()
-                .position(|v| v == b)
-                .ok_or_else(|| invalid("invalid Z85 byte"))? as u64;
-            n = n * 85 + digit;
-        }
-        let n = u32::try_from(n).map_err(invalid)?;
-        out.extend(n.to_be_bytes());
-    }
-    Ok(out)
+    polars_delta_codec::decode_z85(s).map_err(invalid)
 }
 #[cfg(test)]
 mod tests {
