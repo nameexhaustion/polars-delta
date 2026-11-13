@@ -16,26 +16,41 @@ name = "polars_delta"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-polars-delta-codec = { workspace = true }
-chrono = { workspace = true }
-futures = { workspace = true }
-polars-arrow = { workspace = true }
-polars-buffer = { workspace = true }
-polars-error = { workspace = true }
-polars-io-ext-ffi = { workspace = true, features = ["delta"] }
-polars-parquet = { workspace = true, features = ["compression"] }
-polars-utils = { workspace = true }
-serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true, features = ["float_roundtrip"] }
-tokio = { workspace = true, features = ["rt-multi-thread"] }
-percent-encoding = { workspace = true }
-url = "2"
+crc32fast = "1"
+chrono = { workspace = true, optional = true }
+futures = { workspace = true, optional = true }
+polars-arrow = { workspace = true, optional = true }
+polars-buffer = { workspace = true, optional = true }
+polars-error = { workspace = true, optional = true }
+polars-io-ext-ffi = { workspace = true, optional = true, features = ["delta"] }
+polars-parquet = { workspace = true, optional = true, features = ["compression"] }
+polars-utils = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true, features = ["float_roundtrip"] }
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread"] }
+percent-encoding = { workspace = true, optional = true }
+url = { version = "2", optional = true }
 
 pyo3 = { workspace = true, optional = true, features = ["abi3-py310", "extension-module"] }
 
 [features]
 default = []
-python = ["dep:pyo3"]
+planner = [
+  "dep:chrono",
+  "dep:futures",
+  "dep:polars-arrow",
+  "dep:polars-buffer",
+  "dep:polars-error",
+  "dep:polars-io-ext-ffi",
+  "dep:polars-parquet",
+  "dep:polars-utils",
+  "dep:serde",
+  "dep:serde_json",
+  "dep:tokio",
+  "dep:percent-encoding",
+  "dep:url",
+]
+python = ["planner", "dep:pyo3"]
 
 [lints]
 workspace = true

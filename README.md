@@ -1,8 +1,8 @@
 # polars-delta
 
 Native Delta Lake scan planning for Polars. This repository builds the `polars_delta`
-Python extension and exports the `polars.io_plugin.delta.v1` planning contract. It also owns
-the standalone `polars-delta-codec` Rust package in `codec/`.
+Python extension and exports the `polars.io_plugin.delta.v1` planning contract. The same Rust crate exposes
+`polars_delta::codec` for native deletion-vector decoding without planner features.
 
 The planner reads Delta logs and checkpoints through host-provided storage, and returns
 snapshot schema, active files, partition values, statistics and deletion-vector descriptors.
@@ -13,16 +13,18 @@ features produce an explicit unsupported-feature result; malformed metadata is a
 
 Keep this repository at `crates/polars-delta` inside a compatible Polars checkout.
 The parent workspace discovers it through `crates/*`; it inherits workspace metadata,
-lints and dependency versions. Its package version is independent of Polars.
+lints and dependency versions. Its package version is independent of Polars. It is not a
+standalone checkout: Cargo still resolves optional dependencies and workspace metadata when
+planner features are disabled.
 
 The Rust package and library are `polars-delta` and `polars_delta`. The Python distribution
 and import module are `polars-delta` and `polars_delta`. Enable the `python` Cargo feature
 for the extension module; maturin enables it automatically.
 
 Run Cargo checks from the parent workspace. Build wheels with maturin using this
-repository's `pyproject.toml`. Follow the host checkout's build/offload instructions. After
-`maturin sdist`, run the host's `tools/normalize-sdist-workspace.py` with Python 3.11 or later
-on the generated archives before testing or publishing them; release workflows do this automatically.
+repository's `pyproject.toml`. Raw maturin source archives include the required dependency
+sources and need no workspace-normalization step. Follow the host checkout's build/offload
+instructions.
 
 ## Integration
 
@@ -39,15 +41,31 @@ This development implementation requires a matching Polars build. The host and p
 with compatible contracts; installing this development source alone does not add plugin
 support to older Polars builds.
 
-## Deletion-vector codec
+## Feature separation
 
-`polars-delta-codec` validates Delta deletion-vector framing and decodes portable Roaring data
-into packed keep bits. It depends only on `crc32fast`, not on Polars, Arrow, Python or this
-planner. The host links it statically for native reads with either planner; storage credentials,
-lazy range reads, pruning, masks and reader scheduling remain host responsibilities. The Python
-planning plugin remains optional at runtime.
+Default features are empty. The always-available `polars_delta::codec` module validates Delta
+deletion-vector framing and decodes portable Roaring data into packed keep bits. Its only
+direct non-standard-library dependency is `crc32fast`. The host depends on `polars-delta` with default
+features disabled; it keeps storage credentials, lazy range reads, pruning and reader scheduling.
+The Python planning plugin remains optional at runtime.
 
-The compatible Polars source checkout requires this repository, at its pinned revision, before
-Cargo metadata or builds. Host and plugin source distributions include the codec dependency.
-The codec has independent package metadata and must be published to the Rust registry before
-host crates depending on its version. Publishing the Python plugin does not publish the codec.
+The `planner` feature enables snapshot planning and its Arrow/Parquet, storage-interface and
+other planning dependencies. The `python` feature includes `planner` and the Python extension;
+maturin enables it through `pyproject.toml`. A workspace build selecting the extension can unify
+features with the host dependency, so check the minimal build independently:
+
+```bash
+cargo test -p polars-delta --no-default-features
+cargo test -p polars-delta --no-default-features --features planner
+```
+
+The codec caller supplies the maximum row bound and performs storage reads. Validate the file
+header before fetching a stored frame; inline/frame decoding validates sizes, CRC where present,
+cardinality and portable Roaring contents. Results own packed least-significant-bit-first keep
+bits and a logical length; rows beyond that length are kept. The serialized input bound is
+512 MiB. Per-mask bounds do not bound aggregate memory across readers.
+
+This package retains `publish = false`. Disabling planner features does not remove optional
+planner dependencies from Cargo registry resolution, including the unpublished host FFI package.
+Rust registry publication needs a separate release design; Python wheels and source distributions
+are built from the matching workspace sources.

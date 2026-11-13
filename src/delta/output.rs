@@ -372,7 +372,7 @@ impl<T> TransposeOption<T> for Option<Option<T>> {
     }
 }
 fn z85(s: &str) -> Result<Vec<u8>> {
-    polars_delta_codec::decode_z85(s).map_err(invalid)
+    crate::codec::decode_z85(s).map_err(invalid)
 }
 #[cfg(test)]
 mod tests {
