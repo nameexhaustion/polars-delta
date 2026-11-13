@@ -96,7 +96,7 @@ pub fn decode_z85(value: &str) -> Result<Vec<u8>> {
         "deletion vector exceeds 512 MiB serialized size resource limit"
     );
     let mut out = Vec::with_capacity(value.len() / 5 * 4);
-    for chunk in value.as_bytes().chunks_exact(5) {
+    for chunk in value.as_bytes().as_chunks::<5>().0 {
         let mut n = 0u32;
         for c in chunk {
             let digit = Z85
